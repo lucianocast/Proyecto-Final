@@ -28,6 +28,31 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Redirección según rol (prioridad)
+        $user = Auth::user();
+        if ($user) {
+            if (method_exists($user, 'role') || true) {
+                $role = $user->role ?? null;
+                // Prioridad: administrador -> encargado -> vendedor -> proveedor -> cliente
+                if ($role === 'administrador' || $role === 'admin') {
+                    return redirect()->intended(route('admin.dashboard', absolute: false));
+                }
+                if ($role === 'encargado') {
+                    return redirect()->intended(route('encargado.dashboard', absolute: false));
+                }
+                if ($role === 'vendedor') {
+                    return redirect()->intended(route('vendedor.dashboard', absolute: false));
+                }
+                if ($role === 'proveedor') {
+                    return redirect()->intended(route('proveedor.dashboard', absolute: false));
+                }
+                if ($role === 'cliente') {
+                    return redirect()->intended(route('cliente.dashboard', absolute: false));
+                }
+            }
+        }
+
+        // Fallback al dashboard genérico
         return redirect()->intended(route('dashboard', absolute: false));
     }
 

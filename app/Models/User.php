@@ -21,6 +21,7 @@ class User extends Authenticatable
         'name',
         'email',
         'password',
+        'role',
     ];
 
     /**
@@ -44,5 +45,15 @@ class User extends Authenticatable
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];
+    }
+
+    /**
+     * Determine if the user is an encargado
+     *
+     * @return bool
+     */
+    public function isEncargado(): bool
+    {
+        return $this->role === 'encargado';
     }
 }
