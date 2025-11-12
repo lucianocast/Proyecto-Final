@@ -7,15 +7,32 @@
 
         <title>@yield('title', 'Panel de Proveedor') - {{ config('app.name', 'Laravel') }}</title>
 
-        <link rel="preconnect" href="https://fonts.bunny.net">
-        <link href="https://fonts.bunny.net/css?family=figtree:400,500,600&display=swap" rel="stylesheet" />
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
         @vite(['resources/css/app.css', 'resources/js/app.js'])
+
+        <style>
+            body {
+                font-family: 'Poppins', sans-serif;
+            }
+            .animated-gradient-bg {
+                background: linear-gradient(135deg, #fde7e7, #fef8e8, #e6f9f5);
+                background-size: 400% 400%;
+                animation: gradientAnimation 18s ease infinite;
+            }
+            @keyframes gradientAnimation {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+            }
+        </style>
     </head>
-    <body class="font-sans antialiased">
-        <div class="min-h-screen bg-gray-100">
+    <body class="font-sans antialiased animated-gradient-bg">
+        <div class="min-h-screen">
             
-            <nav x-data="{ open: false }" class="bg-white border-b border-gray-100">
+            <nav x-data="{ open: false }" class="bg-white/30 backdrop-blur-md border-b border-white/20 shadow-sm">
                 <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                     <div class="flex justify-between h-16">
                         <div class="flex">
@@ -26,7 +43,7 @@
                             </div>
 
                             <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                                <span class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-medium leading-5 text-gray-700">
+                                <span class="inline-flex items-center px-1 pt-1 border-b-2 border-transparent text-sm font-semibold leading-5 text-gray-700">
                                     Panel de Proveedor
                                 </span>
                             </div>
@@ -35,7 +52,7 @@
                         <div class="hidden sm:flex sm:items-center sm:ms-6">
                             <x-dropdown align="right" width="48">
                                 <x-slot name="trigger">
-                                    <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-500 bg-white hover:text-gray-700 focus:outline-none transition ease-in-out duration-150">
+                                    <button class="inline-flex items-center px-3 py-2 border border-transparent text-sm leading-4 font-medium rounded-md text-gray-600 hover:text-gray-800 focus:outline-none transition ease-in-out duration-150">
                                         <div>{{ Auth::user()->name }}</div>
                                         <div class="ms-1">
                                             <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
@@ -51,7 +68,7 @@
                                         <x-dropdown-link :href="route('logout')"
                                                 onclick="event.preventDefault();
                                                             this.closest('form').submit();">
-                                            {{ __('Log Out') }}
+                                            {{ __('Cerrar Sesión') }}
                                         </x-dropdown-link>
                                     </form>
                                 </x-slot>
@@ -60,14 +77,6 @@
                     </div>
                 </div>
             </nav>
-
-            @if (isset($header))
-                <header class="bg-white shadow">
-                    <div class="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endif
 
             <main class="py-12">
                 <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">

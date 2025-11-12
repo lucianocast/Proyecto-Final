@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Proveedor;
 use App\Models\Insumo;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class ProveedorController extends Controller
@@ -16,7 +17,10 @@ class ProveedorController extends Controller
 
     public function create()
     {
-        return view('encargado.proveedores.create');
+        // Usuarios que no tienen proveedor asociado (posibles candidatos a ligar)
+        $users = User::whereDoesntHave('proveedor')->orderBy('name')->get();
+
+        return view('encargado.proveedores.create', compact('users'));
     }
 
     public function store(Request $request)
@@ -29,11 +33,12 @@ class ProveedorController extends Controller
             'telefono' => 'nullable|string|max:255',
             'direccion' => 'nullable|string|max:255',
             'notas' => 'nullable|string',
+            'user_id' => 'nullable|exists:users,id|unique:proveedores,user_id',
         ]);
 
         $data['activo'] = true;
 
-        $proveedor = Proveedor::create($data);
+    $proveedor = Proveedor::create($data);
 
         return redirect()->route('encargado.proveedores')->with('success', 'Proveedor creado');
     }
@@ -50,7 +55,13 @@ class ProveedorController extends Controller
 
     public function edit(Proveedor $proveedor)
     {
-        return view('encargado.proveedores.edit', compact('proveedor'));
+        // Usuarios sin proveedor + el usuario actualmente asociado (si existe)
+        $users = User::whereDoesntHave('proveedor')
+            ->orWhere('id', $proveedor->user_id)
+            ->orderBy('name')
+            ->get();
+
+        return view('encargado.proveedores.edit', compact('proveedor', 'users'));
     }
 
     public function update(Request $request, Proveedor $proveedor)
@@ -63,6 +74,7 @@ class ProveedorController extends Controller
             'telefono' => 'nullable|string|max:255',
             'direccion' => 'nullable|string|max:255',
             'notas' => 'nullable|string',
+            'user_id' => 'nullable|exists:users,id|unique:proveedores,user_id,' . $proveedor->id,
         ]);
 
         $proveedor->update($data);

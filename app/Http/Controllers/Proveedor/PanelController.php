@@ -14,10 +14,11 @@ class PanelController extends Controller
     {
         $user = Auth::user();
         $proveedor = $user->proveedor;
+        // Protección: si el usuario no tiene perfil de proveedor relacionado, evitar acceder a ->id
         if (! $proveedor) {
-            // Redirect to home if no proveedor profile is linked to the user
-            return redirect('/')->with('error','No se encontró proveedor para el usuario');
+            return redirect('/')->with('error', 'No se encontró proveedor para el usuario');
         }
+        
 
         $ocsPendientes = OrdenDeCompra::where('proveedor_id', $proveedor->id)
             ->where('status', 'Pendiente')

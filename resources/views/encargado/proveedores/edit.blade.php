@@ -53,6 +53,17 @@
                 <label class="block text-sm font-medium text-gray-700">Notas</label>
                 <textarea name="notas" class="mt-1 block w-full border rounded px-3 py-2">{{ old('notas', $proveedor->notas) }}</textarea>
             </div>
+
+            <div>
+                <label class="block text-sm font-medium text-gray-700">Usuario asociado (opcional)</label>
+                <select name="user_id" class="mt-1 block w-full border rounded px-3 py-2">
+                    <option value="">-- Ninguno --</option>
+                    @foreach($users as $u)
+                        <option value="{{ $u->id }}" {{ old('user_id', $proveedor->user_id) == $u->id ? 'selected' : '' }}>{{ $u->name }} &lt;{{ $u->email }}&gt;</option>
+                    @endforeach
+                </select>
+                <p class="text-xs text-gray-500 mt-1">Asocia un usuario del sistema para que pueda acceder al panel de proveedor.</p>
+            </div>
         </div>
 
         <div class="mt-4 flex items-center gap-2">

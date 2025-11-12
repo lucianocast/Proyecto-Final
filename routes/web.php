@@ -115,7 +115,7 @@ Route::group([
 ], function() {
     
     // Esta es la ruta que arregla tu problema:
-    Route::get('/proveedor/dashboard', [ProveedorPanelController::class, 'dashboard'])->name('dashboard');
+    Route::get('/dashboard', [ProveedorPanelController::class, 'dashboard'])->name('dashboard');
     
     // Estas son las otras rutas que ya creamos para las acciones:
     Route::post('/oc/{ordenDeCompra}/confirmar', [ProveedorPanelController::class, 'confirm'])->name('oc.confirm');

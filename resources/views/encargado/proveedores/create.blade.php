@@ -19,6 +19,16 @@
 
         <div class="grid grid-cols-1 gap-4">
             <div>
+                <label class="block text-sm font-medium text-gray-700">Usuario asociado (opcional)</label>
+                <select name="user_id" class="mt-1 block w-full border rounded px-3 py-2">
+                    <option value="">-- Ninguno --</option>
+                    @foreach($users as $u)
+                        <option value="{{ $u->id }}" {{ old('user_id') == $u->id ? 'selected' : '' }}>{{ $u->name }} &lt;{{ $u->email }}&gt;</option>
+                    @endforeach
+                </select>
+                <p class="text-xs text-gray-500 mt-1">Asocia un usuario del sistema para que pueda acceder al panel de proveedor.</p>
+            </div>
+            <div>
                 <label class="block text-sm font-medium text-gray-700">Nombre Empresa <span class="text-red-500">*</span></label>
                 <input name="nombre_empresa" value="{{ old('nombre_empresa') }}" required class="mt-1 block w-full border rounded px-3 py-2" />
             </div>
