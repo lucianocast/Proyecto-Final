@@ -37,11 +37,17 @@ use App\Http\Middleware\EnsureRole;
 Route::middleware(['auth', EnsureRole::class . ':administrador'])->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
-        Route::get('/usuarios-roles', [\App\Http\Controllers\Admin\DashboardController::class, 'usuariosRoles'])->name('usuarios_roles');
+    // Ruta principal para gestionar usuarios y roles (index)
+    Route::get('/usuarios-roles', [\App\Http\Controllers\Admin\UserController::class, 'index'])->name('usuarios_roles');
         Route::get('/sistema', [\App\Http\Controllers\Admin\DashboardController::class, 'sistema'])->name('sistema');
         Route::get('/notificaciones', [\App\Http\Controllers\Admin\DashboardController::class, 'notificaciones'])->name('notificaciones');
         Route::get('/reportes', [\App\Http\Controllers\Admin\DashboardController::class, 'reportes'])->name('reportes');
         Route::get('/auditoria', [\App\Http\Controllers\Admin\DashboardController::class, 'auditoria'])->name('auditoria');
+
+        // Rutas de gestión de usuarios (base: /admin/usuarios-roles)
+        Route::resource('usuarios-roles', \App\Http\Controllers\Admin\UserController::class)
+            ->names('users')
+            ->parameters(['usuarios-roles' => 'user']);
     });
 });
 

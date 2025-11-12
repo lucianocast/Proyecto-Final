@@ -44,7 +44,16 @@ class User extends Authenticatable
         return [
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
+            'active' => 'boolean',
         ];
+    }
+
+    /**
+     * Scope to only active users
+     */
+    public function scopeActive($query)
+    {
+        return $query->where('active', true);
     }
 
     /**

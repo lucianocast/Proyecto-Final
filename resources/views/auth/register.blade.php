@@ -1,59 +1,218 @@
-<x-guest-layout>
-    <div class="min-h-screen flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-pink-50 via-rose-50 to-yellow-50">
-        <div class="w-full max-w-md">
-            <div class="bg-white/80 backdrop-blur-md border border-white/60 rounded-2xl shadow-xl p-8">
-                <div class="flex items-center space-x-4">
-                    <img class="h-14 w-14" src="/favicon.ico" alt="Pastelería">
-                    <div>
-                        <h2 class="text-2xl font-bold text-gray-800">Crea tu cuenta</h2>
-                        <p class="text-sm text-gray-600">Regístrate para comenzar a administrar tu pastelería</p>
-                    </div>
-                </div>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Cuenta - Pastelería</title>
 
-                <form class="mt-6 space-y-5" method="POST" action="{{ route('register') }}">
-                    @csrf
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 
-                    <div>
-                        <label for="name" class="block text-sm font-medium text-gray-700">Nombre completo</label>
-                        <div class="mt-1">
-                            <x-text-input id="name" name="name" type="text" required :value="old('name')" class="block w-full px-4 py-2 rounded-lg border border-gray-200 shadow-sm focus:ring-2 focus:ring-rose-300 focus:border-rose-300" placeholder="Tu nombre" />
-                        </div>
-                        <x-input-error :messages="$errors->get('name')" class="mt-2 text-sm text-red-600" />
-                    </div>
+    <style>
+        /* --- Estilos Generales y Fondo Animado (Idéntico al login) --- */
+        body {
+            font-family: 'Poppins', sans-serif;
+            margin: 0;
+            color: #333;
+            background: linear-gradient(135deg, #fde7e7, #fef8e8, #e6f9f5);
+            background-size: 400% 400%;
+            animation: gradientAnimation 18s ease infinite;
+            min-height: 100vh; /* Usar min-height para asegurar que cubre toda la pantalla */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px 0; /* Añadir padding vertical para pantallas pequeñas */
+        }
 
-                    <div>
-                        <label for="email" class="block text-sm font-medium text-gray-700">Correo electrónico</label>
-                        <div class="mt-1">
-                            <x-text-input id="email" name="email" type="email" required :value="old('email')" class="block w-full px-4 py-2 rounded-lg border border-gray-200 shadow-sm focus:ring-2 focus:ring-rose-300 focus:border-rose-300" placeholder="tucorreo@ejemplo.com" />
-                        </div>
-                        <x-input-error :messages="$errors->get('email')" class="mt-2 text-sm text-red-600" />
-                    </div>
+        @keyframes gradientAnimation {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
 
-                    <div>
-                        <label for="password" class="block text-sm font-medium text-gray-700">Contraseña</label>
-                        <div class="mt-1">
-                            <x-text-input id="password" name="password" type="password" required class="block w-full px-4 py-2 rounded-lg border border-gray-200 shadow-sm focus:ring-2 focus:ring-rose-300 focus:border-rose-300" placeholder="Mínimo 8 caracteres" />
-                        </div>
-                        <x-input-error :messages="$errors->get('password')" class="mt-2 text-sm text-red-600" />
-                    </div>
+        /* --- Tarjeta de Registro con Efecto "Glass" --- */
+        .register-card {
+            background: rgba(255, 255, 255, 0.3);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.15);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            width: 100%;
+            max-width: 450px; /* Un poco más ancha para los campos extra */
+            box-sizing: border-box;
+            animation: contentFadeInUp 1s ease-out;
+        }
+        
+        @keyframes contentFadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
 
-                    <div>
-                        <label for="password_confirmation" class="block text-sm font-medium text-gray-700">Confirmar contraseña</label>
-                        <div class="mt-1">
-                            <x-text-input id="password_confirmation" name="password_confirmation" type="password" required class="block w-full px-4 py-2 rounded-lg border border-gray-200 shadow-sm focus:ring-2 focus:ring-rose-300 focus:border-rose-300" placeholder="Repite tu contraseña" />
-                        </div>
-                        <x-input-error :messages="$errors->get('password_confirmation')" class="mt-2 text-sm text-red-600" />
-                    </div>
+        /* --- Estilos del Formulario --- */
+        .register-card h2 {
+            text-align: center;
+            font-weight: 600;
+            font-size: 28px;
+            margin-top: 0;
+            margin-bottom: 10px;
+            color: #2c3e50;
+        }
 
-                    <div>
-                        <x-primary-button class="w-full py-2 text-sm">{{ __('Registrarse') }}</x-primary-button>
-                    </div>
+        .register-card p {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 15px;
+            color: #555;
+        }
 
-                    <p class="text-center text-sm text-gray-600">¿Ya tienes cuenta? <a href="{{ route('login') }}" class="text-rose-600 font-medium hover:underline">Inicia sesión</a></p>
-                </form>
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            font-size: 14px;
+            color: #34495e;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid #ddd;
+            background-color: rgba(255, 255, 255, 0.7);
+            font-family: 'Poppins', sans-serif;
+            font-size: 15px;
+            transition: border-color 0.3s ease, box-shadow 0.3s ease;
+            box-sizing: border-box;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #f79a9a;
+            box-shadow: 0 0 0 3px rgba(253, 231, 231, 0.6);
+        }
+        
+        /* Mensaje de error */
+        .error-message {
+            color: #e74c3c;
+            font-size: 12px;
+            margin-top: 5px;
+            display: block;
+        }
+
+        /* --- Botón de Registro --- */
+        .submit-btn {
+            width: 100%;
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background-color: #e74c3c;
+            color: white;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .submit-btn:hover {
+            background-color: #c0392b;
+            transform: translateY(-2px);
+        }
+
+        /* --- Enlaces inferiores --- */
+        .footer-links {
+            text-align: center;
+            margin-top: 25px;
+            font-size: 14px;
+        }
+        
+        .footer-links p {
+             margin: 10px 0;
+             color: #555;
+        }
+
+        .footer-links a {
+            color: #e74c3c;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+        
+        .terms-text {
+            font-size: 12px;
+            color: #777;
+            text-align: center;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="register-card">
+        <h2>Crea tu cuenta</h2>
+        <p>Regístrate para comenzar a administrar tu pastelería</p>
+
+        <form method="POST" action="{{ route('register') }}">
+            @csrf
+
+            <div class="input-group">
+                <label for="name">Nombre completo</label>
+                <input id="name" type="text" name="name" value="{{ old('name') }}" required autocomplete="name" autofocus>
+                @error('name')
+                    <span class="error-message">{{ $message }}</span>
+                @enderror
             </div>
 
-            <div class="mt-6 text-center text-sm text-gray-500">Al registrarte aceptas nuestros <a href="#" class="text-rose-600 hover:underline">Términos y Condiciones</a></div>
-        </div>
+            <div class="input-group">
+                <label for="email">Correo electrónico</label>
+                <input id="email" type="email" name="email" value="{{ old('email') }}" required autocomplete="email">
+                @error('email')
+                    <span class="error-message">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div class="input-group">
+                <label for="password">Contraseña</label>
+                <input id="password" type="password" name="password" required autocomplete="new-password">
+                 @error('password')
+                    <span class="error-message">{{ $message }}</span>
+                @enderror
+            </div>
+
+            <div class="input-group">
+                <label for="password-confirm">Confirmar contraseña</label>
+                <input id="password-confirm" type="password" name="password_confirmation" required autocomplete="new-password">
+            </div>
+
+            <button type="submit" class="submit-btn">
+                Registrarse
+            </button>
+
+            <div class="footer-links">
+                <p>¿Ya tienes cuenta? <a href="{{ route('login') }}">Inicia sesión</a></p>
+            </div>
+            
+             <p class="terms-text">
+                Al registrarte, aceptas nuestros Términos y Condiciones.
+            </p>
+        </form>
     </div>
-</x-guest-layout>
+
+</body>
+</html>

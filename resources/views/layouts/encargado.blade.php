@@ -62,7 +62,7 @@
 
                         @if($role === 'administrador' || $role === 'admin')
                             <li><a href="{{ route('admin.dashboard') }}" class="block px-3 py-2 rounded hover:bg-white transition-colors duration-200 shadow-sm hover:shadow-md">Inicio</a></li>
-                            <li><a href="{{ route('admin.usuarios_roles') }}" class="block px-3 py-2 rounded hover:bg-white transition-colors duration-200">Gestionar usuarios y roles</a></li>
+                            <li><a href="{{ route('admin.users.index') }}" class="block px-3 py-2 rounded hover:bg-white transition-colors duration-200">Gestionar usuarios y roles</a></li>
                             <li><a href="{{ route('admin.sistema') }}" class="block px-3 py-2 rounded hover:bg-white transition-colors duration-200">Configurar Sistema</a></li>
                             <li><a href="{{ route('admin.notificaciones') }}" class="block px-3 py-2 rounded hover:bg-white transition-colors duration-200">Notificaciones y Alertas</a></li>
                             <li><a href="{{ route('admin.reportes') }}" class="block px-3 py-2 rounded hover:bg-white transition-colors duration-200">Reportes y Análisis</a></li>
