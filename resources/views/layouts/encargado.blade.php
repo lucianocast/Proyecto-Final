@@ -68,12 +68,18 @@
                             <li><a href="{{ route('admin.reportes') }}" class="block px-3 py-2 rounded hover:bg-white transition-colors duration-200">Reportes y Análisis</a></li>
                             <li><a href="{{ route('admin.auditoria') }}" class="block px-3 py-2 rounded hover:bg-white transition-colors duration-200">Auditoría</a></li>
 
+                                {{-- Enlaces rápidos para gestión (opcional) --}}
+                                <li><a href="{{ route('admin.dashboard') }}" class="block px-3 py-2 rounded hover:bg-white transition-colors duration-200">Panel Admin</a></li>
+
                         @elseif($role === 'encargado')
                             <li><a href="{{ route('encargado.dashboard') }}" class="block px-3 py-2 rounded hover:bg-white transition-colors duration-200">Inicio</a></li>
                             <li><a href="{{ route('encargado.compras') }}" class="block px-3 py-2 rounded hover:bg-white transition-colors duration-200">Gestionar compras</a></li>
                             <li><a href="{{ route('encargado.proveedores') }}" class="block px-3 py-2 rounded hover:bg-white transition-colors duration-200">Gestionar proveedores</a></li>
                             <li><a href="{{ route('encargado.produccion') }}" class="block px-3 py-2 rounded hover:bg-white transition-colors duration-200">Gestionar producción</a></li>
                             <li><a href="{{ route('encargado.stock') }}" class="block px-3 py-2 rounded hover:bg-white transition-colors duration-200">Gestionar stock</a></li>
+                                {{-- Nuevos enlaces rápidos solicitados --}}
+                                <li><a href="{{ route('encargado.insumos.index') }}" class="block px-3 py-2 rounded hover:bg-white transition-colors duration-200">Insumos</a></li>
+                                <li><a href="{{ route('encargado.categorias-insumos.index') }}" class="block px-3 py-2 rounded hover:bg-white transition-colors duration-200">Categorías de Insumos</a></li>
 
                         @elseif($role === 'vendedor')
                             <li><a href="#" class="block px-3 py-2 rounded hover:bg-white transition-colors duration-200">Inicio Vendedor</a></li>

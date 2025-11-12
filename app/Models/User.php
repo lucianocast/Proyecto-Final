@@ -65,4 +65,14 @@ class User extends Authenticatable
     {
         return $this->role === 'encargado';
     }
+
+    public function ordenesDeCompraCreadas()
+    {
+        return $this->hasMany(\App\Models\OrdenDeCompra::class, 'user_id');
+    }
+
+    public function proveedor()
+    {
+        return $this->hasOne(\App\Models\Proveedor::class, 'user_id');
+    }
 }
