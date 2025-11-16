@@ -11,11 +11,8 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        // Registrar middleware de rutas personalizado
-        // Alias: 'role' -> App\Http\Middleware\EnsureRole
-        if (method_exists($middleware, 'addRouteMiddleware')) {
-            $middleware->addRouteMiddleware('role', \App\Http\Middleware\EnsureRole::class);
-        }
+        // Spatie/Shield registrarán sus middlewares automáticamente
+        // ya no necesitamos el alias manual.
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         //

@@ -2,32 +2,30 @@
 
 namespace App\Models;
 
-// use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Spatie\Permission\Traits\HasRoles;
+use Filament\Models\Contracts\FilamentUser;
+use Filament\Panel;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 
-class User extends Authenticatable
+class User extends Authenticatable implements FilamentUser, MustVerifyEmail
 {
-    /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, Notifiable;
+    use HasFactory, Notifiable, HasRoles;
 
     /**
-     * The attributes that are mass assignable.
-     *
-     * @var list<string>
+     * Los atributos que se pueden asignar en masa.
      */
     protected $fillable = [
         'name',
         'email',
         'password',
-        'role',
+        'active', // 'role' FUE ELIMINADO
     ];
 
     /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var list<string>
+     * Los atributos que deben estar ocultos para la serialización.
      */
     protected $hidden = [
         'password',
@@ -36,8 +34,6 @@ class User extends Authenticatable
 
     /**
      * Get the attributes that should be cast.
-     *
-     * @return array<string, string>
      */
     protected function casts(): array
     {
@@ -57,15 +53,16 @@ class User extends Authenticatable
     }
 
     /**
-     * Determine if the user is an encargado
-     *
-     * @return bool
+     * Método requerido por Filament
      */
-    public function isEncargado(): bool
+    public function canAccessPanel(Panel $panel): bool
     {
-        return $this->role === 'encargado';
+        return $this->active;
     }
 
+    // --- MÉTODO isEncargado() ELIMINADO ---
+
+    // Tus relaciones originales (¡importante mantenerlas!)
     public function ordenesDeCompraCreadas()
     {
         return $this->hasMany(\App\Models\OrdenDeCompra::class, 'user_id');

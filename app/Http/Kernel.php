@@ -12,7 +12,6 @@ class Kernel extends HttpKernel
      * @var array
      */
     protected $middlewareAliases = [
-        // Registrar alias 'role' apuntando al middleware EnsureRole
-        'role' => \App\Http\Middleware\EnsureRole::class,
+        
     ];
 }

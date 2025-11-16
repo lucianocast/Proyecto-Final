@@ -7,7 +7,9 @@ use App\Http\Controllers\ProveedorInsumoController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\CategoriaProductoController;
 use App\Http\Controllers\RecetaController;
-use App\Http\Middleware\EnsureUserIsEncargado;
+// ELIMINADOS: Middlewares antiguos
+// use App\Http\Middleware\EnsureUserIsEncargado;
+// use App\Http\Middleware\EnsureRole;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Encargado\CompraController;
@@ -30,7 +32,8 @@ Route::middleware('auth')->group(function () {
 require __DIR__.'/auth.php';
 
 // Rutas para el rol Encargado
-Route::middleware(['auth', EnsureUserIsEncargado::class])->prefix('encargado')->name('encargado.')->group(function () {
+// ACTUALIZADO: Se usa 'role:encargado' en lugar del middleware class
+Route::middleware(['auth', 'role:encargado'])->prefix('encargado')->name('encargado.')->group(function () {
     Route::get('/', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/compras', [DashboardController::class, 'compras'])->name('compras');
     // Proveedores: listado y CRUD + catálogo (reemplaza la ruta anterior)
@@ -76,9 +79,9 @@ Route::middleware(['auth', EnsureUserIsEncargado::class])->prefix('encargado')->
 });
 
 // Dashboards mínimos para otros roles (protegidos por rol)
-use App\Http\Middleware\EnsureRole;
 
-Route::middleware(['auth', EnsureRole::class . ':administrador'])->group(function () {
+// ACTUALIZADO: Se usa 'role:administrador'
+Route::middleware(['auth', 'role:administrador'])->group(function () {
     Route::prefix('admin')->name('admin.')->group(function () {
         Route::get('/', [\App\Http\Controllers\Admin\DashboardController::class, 'index'])->name('dashboard');
     // Ruta principal para gestionar usuarios y roles (index)
@@ -95,11 +98,13 @@ Route::middleware(['auth', EnsureRole::class . ':administrador'])->group(functio
     });
 });
 
-Route::middleware(['auth', EnsureRole::class . ':vendedor'])->group(function () {
+// ACTUALIZADO: Se usa 'role:vendedor'
+Route::middleware(['auth', 'role:vendedor'])->group(function () {
     Route::get('/vendedor', function () { return view('roles.vendedor'); })->name('vendedor.dashboard');
 });
 
-Route::middleware(['auth', EnsureRole::class . ':cliente'])->group(function () {
+// ACTUALIZADO: Se usa 'role:cliente'
+Route::middleware(['auth', 'role:cliente'])->group(function () {
     Route::get('/cliente', function () { return view('roles.cliente'); })->name('cliente.dashboard');
 });
 
@@ -110,7 +115,8 @@ Route::middleware(['auth', EnsureRole::class . ':cliente'])->group(function () {
 */
 Route::group([
     'prefix' => 'proveedor', 
-    'middleware' => ['auth', \App\Http\Middleware\EnsureRole::class . ':proveedor'], 
+    // ACTUALIZADO: Se usa 'role:proveedor'
+    'middleware' => ['auth', 'role:proveedor'], 
     'as' => 'proveedor.'
 ], function() {
     
