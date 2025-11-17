@@ -14,6 +14,7 @@ class CategoriaProducto extends Model
     protected $fillable = [
         'nombre',
         'descripcion',
+        'tipo_medida',
     ];
 
     public function productos()

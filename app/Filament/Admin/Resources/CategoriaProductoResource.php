@@ -18,6 +18,7 @@ class CategoriaProductoResource extends Resource
     protected static ?string $model = CategoriaProducto::class;
 
     protected static ?string $navigationIcon = 'heroicon-o-rectangle-stack';
+    protected static ?string $navigationGroup = 'Producción';
 
     public static function form(Form $form): Form
     {
@@ -28,6 +29,14 @@ class CategoriaProductoResource extends Resource
                     ->maxLength(255),
                 Forms\Components\Textarea::make('descripcion')
                     ->columnSpanFull(),
+                Forms\Components\Select::make('tipo_medida')
+                    ->label('Tipo de Medida')
+                    ->required()
+                    ->options([
+                        'medida' => 'Medida (ej. 18cm, 20cm)',
+                        'peso' => 'Peso (ej. 500gr, 1kg)',
+                    ])
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -36,6 +45,9 @@ class CategoriaProductoResource extends Resource
         return $table
             ->columns([
                 Tables\Columns\TextColumn::make('nombre')
+                    ->searchable(),
+                Tables\Columns\TextColumn::make('tipo_medida')
+                    ->label('Tipo de Medida')
                     ->searchable(),
                 Tables\Columns\TextColumn::make('created_at')
                     ->dateTime()

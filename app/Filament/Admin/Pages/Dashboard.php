@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Pages;
 
+use App\Filament\Admin\Widgets\PedidoCalendarWidget;
 use Filament\Pages\Page;
 
 class Dashboard extends Page
@@ -9,4 +10,11 @@ class Dashboard extends Page
     protected static ?string $navigationIcon = 'heroicon-o-document-text';
 
     protected static string $view = 'filament.pages.dashboard';
+
+    public function getHeaderWidgets(): array
+    {
+        return [
+            PedidoCalendarWidget::class,
+        ];
+    }
 }

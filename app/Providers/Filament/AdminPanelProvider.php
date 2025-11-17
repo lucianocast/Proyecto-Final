@@ -5,6 +5,7 @@ namespace App\Providers\Filament;
 // --- AÑADE ESTA LÍNEA ARRIBA ---
 use App\Filament\Admin\Pages\Dashboard;
 use BezhanSalleh\FilamentShield\FilamentShieldPlugin;
+use Saade\FilamentFullCalendar\FilamentFullCalendarPlugin;
 
 use Filament\Http\Middleware\Authenticate;
 use Filament\Http\Middleware\DisableBladeIconComponents;
@@ -56,6 +57,7 @@ class AdminPanelProvider extends PanelProvider
             ])
             ->plugins([
                 FilamentShieldPlugin::make(),
+                FilamentFullCalendarPlugin::make(),
             ])
             ->authMiddleware([
                 Authenticate::class,

@@ -44,15 +44,14 @@ class InsumoResource extends Resource
                     ->maxLength(255)
                     ->label('Unidad de Medida'),
                 TextInput::make('precio_unitario')
-                    ->required()
-                    ->numeric()
-                    ->prefix('$')
-                    ->step('0.01')
+                    ->readonly()
                     ->label('Precio Unitario'),
                 TextInput::make('stock_actual')
                     ->numeric()
                     ->hiddenOn('create')
-                    ->disabled(),
+                    ->disabled()
+                    ->dehydrated(false)
+                    ->formatStateUsing(fn ($record) => $record ? $record->lotes()->sum('cantidad_actual') : 0),
                 TextInput::make('stock_minimo')
                     ->required()
                     ->numeric(),
@@ -73,11 +72,12 @@ class InsumoResource extends Resource
                     ->label('Unidad'),
                 TextColumn::make('stock_actual')
                     ->numeric()
-                    ->label('Stock Actual'),
+                    ->label('Stock Actual')
+                    ->state(fn ($record) => $record->lotes()->sum('cantidad_actual')),
                 TextColumn::make('stock_minimo')
                     ->numeric()
                     ->label('Stock Mínimo'),
-                TextColumn::make('precio_unitario')
+                TextColumn::make('precio')
                     ->money('ARS')
                     ->label('Precio'),
             ])

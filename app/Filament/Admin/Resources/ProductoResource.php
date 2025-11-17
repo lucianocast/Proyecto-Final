@@ -18,9 +18,13 @@ use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Textarea;
 use Filament\Forms\Components\Toggle;
+use Filament\Forms\Components\FileUpload;
+use Filament\Forms\Components\TagsInput;
+use Filament\Forms\Get;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Columns\IconColumn;
-use Filament\Tables\Columns\ToggleColumn; // Opcional, si quieres editarlo en la tabla
+use Filament\Tables\Columns\ToggleColumn;
+use App\Models\CategoriaProducto;
 
 class ProductoResource extends Resource
 {
@@ -35,9 +39,9 @@ class ProductoResource extends Resource
             ->schema([
                 // --- CAMPO DE CATEGORÍA MEJORADO ---
                 Select::make('categoria_producto_id')
-                    ->relationship(name: 'categoria', titleAttribute: 'nombre') // Usa la relación
+                    ->relationship(name: 'categoria', titleAttribute: 'nombre')
                     ->searchable()
-                    ->preload() // Carga las categorías al abrir
+                    ->preload()
                     ->required()
                     ->label('Categoría'),
 
@@ -45,23 +49,28 @@ class ProductoResource extends Resource
                     ->required()
                     ->maxLength(255),
 
-                Textarea::make('descripcion') // <- Mejorado a Textarea
+                Textarea::make('descripcion')
                     ->maxLength(65535)
-                    ->columnSpanFull(), // Ocupa todo el ancho
-
-                TextInput::make('precio') // <- Campo numérico
-                    ->required()
-                    ->numeric()
-                    ->prefix('$') // Prefijo de moneda
-                    ->step('0.01'),
-
-                TextInput::make('stock_minimo')
-                    ->required()
-                    ->numeric()
-                    ->minValue(0),
+                    ->columnSpanFull(),
                 
-                Toggle::make('activo') // <- Mejorado a Toggle
+                Toggle::make('activo')
                     ->required(),
+                
+                // --- CAMPOS DE CATÁLOGO ---
+                Toggle::make('visible_en_catalogo')
+                    ->label('Visible en Catálogo')
+                    ->default(true),
+                
+                FileUpload::make('imagen_url')
+                    ->label('Imagen')
+                    ->directory('productos')
+                    ->image()
+                    ->columnSpanFull(),
+                
+                TagsInput::make('etiquetas')
+                    ->label('Etiquetas')
+                    ->placeholder('Ej: Sin TACC, Destacado, Vegano')
+                    ->columnSpanFull(),
             ]);
     }
 
@@ -73,20 +82,12 @@ class ProductoResource extends Resource
                     ->searchable(),
                 
                 // --- COLUMNA DE CATEGORÍA MEJORADA ---
-                TextColumn::make('categoria.nombre') // Muestra el nombre de la categoría
+                TextColumn::make('categoria.nombre')
                     ->numeric()
                     ->sortable()
                     ->searchable(),
 
-                TextColumn::make('precio') // <- Columna de precio mejorada
-                    ->money('ARS') // Formato de moneda
-                    ->sortable(),
-
-                TextColumn::make('stock_minimo')
-                    ->numeric()
-                    ->sortable(),
-
-                IconColumn::make('activo') // <- Columna de activo mejorada
+                IconColumn::make('activo')
                     ->boolean(),
 
                 TextColumn::make('created_at')
@@ -114,7 +115,7 @@ class ProductoResource extends Resource
     public static function getRelations(): array
     {
         return [
-            //
+            RelationManagers\VariantesRelationManager::class,
         ];
     }
     

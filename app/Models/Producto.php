@@ -17,11 +17,18 @@ class Producto extends Model
         'categoria_producto_id',
         'precio_venta',
         'activo',
+        'imagen_url',
+        'tamaños',
+        'etiquetas',
+        'visible_en_catalogo',
     ];
 
     protected $casts = [
         'precio_venta' => 'decimal:2',
         'activo' => 'boolean',
+        'visible_en_catalogo' => 'boolean',
+        'tamaños' => 'array',
+        'etiquetas' => 'array',
     ];
 
     public function categoria()
@@ -32,6 +39,11 @@ class Producto extends Model
     public function receta()
     {
         return $this->hasOne(Receta::class, 'producto_id');
+    }
+
+    public function variantes()
+    {
+        return $this->hasMany(ProductoVariante::class, 'producto_id')->orderBy('orden');
     }
 
     public function scopeActivos($query)
