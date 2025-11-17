@@ -7,6 +7,9 @@ use App\Http\Controllers\ProveedorInsumoController;
 use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\CategoriaProductoController;
 use App\Http\Controllers\RecetaController;
+use App\Http\Controllers\Frontend\CatalogoController;
+use App\Livewire\Frontend\CartView;
+use App\Livewire\Frontend\CheckoutView;
 // ELIMINADOS: Middlewares antiguos
 // use App\Http\Middleware\EnsureUserIsEncargado;
 // use App\Http\Middleware\EnsureRole;
@@ -15,9 +18,11 @@ use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Encargado\CompraController;
 use App\Http\Controllers\Proveedor\PanelController as ProveedorPanelController;
 
-Route::get('/', function () {
-    return view('welcome');
-});
+// Ruta principal: Catálogo de productos (Portal del Cliente)
+Route::get('/', [CatalogoController::class, 'index'])->name('catalogo.index');
+Route::get('/producto/{producto}', [CatalogoController::class, 'show'])->name('catalogo.show');
+Route::get('/carrito', CartView::class)->name('cart.index');
+Route::get('/checkout', CheckoutView::class)->middleware('auth')->name('checkout.index');
 
 Route::get('/dashboard', function () {
     return view('dashboard');

@@ -50,4 +50,9 @@ class Producto extends Model
     {
         return $query->where('activo', true);
     }
+
+    public function scopeVisibleEnCatalogo($query)
+    {
+        return $query->where('visible_en_catalogo', true);
+    }
 }
