@@ -22,6 +22,7 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
         'email',
         'password',
         'active', // 'role' FUE ELIMINADO
+        'google_id',
     ];
 
     /**
@@ -71,5 +72,10 @@ class User extends Authenticatable implements FilamentUser, MustVerifyEmail
     public function proveedor()
     {
         return $this->hasOne(\App\Models\Proveedor::class, 'user_id');
+    }
+
+    public function clienteProfile()
+    {
+        return $this->hasOne(\App\Models\Cliente::class, 'user_id');
     }
 }

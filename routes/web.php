@@ -8,8 +8,12 @@ use App\Http\Controllers\ProductoController;
 use App\Http\Controllers\CategoriaProductoController;
 use App\Http\Controllers\RecetaController;
 use App\Http\Controllers\Frontend\CatalogoController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Livewire\Frontend\CartView;
 use App\Livewire\Frontend\CheckoutView;
+use App\Mail\PedidoConfirmadoMail;
+use App\Models\Pedido;
+use Illuminate\Support\Facades\Mail;
 // ELIMINADOS: Middlewares antiguos
 // use App\Http\Middleware\EnsureUserIsEncargado;
 // use App\Http\Middleware\EnsureRole;
@@ -23,6 +27,12 @@ Route::get('/', [CatalogoController::class, 'index'])->name('catalogo.index');
 Route::get('/producto/{producto}', [CatalogoController::class, 'show'])->name('catalogo.show');
 Route::get('/carrito', CartView::class)->name('cart.index');
 Route::get('/checkout', CheckoutView::class)->middleware('auth')->name('checkout.index');
+
+// Google OAuth Routes
+Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirectToProvider'])->name('auth.google.redirect');
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleProviderCallback'])->name('auth.google.callback');
+
+
 
 Route::get('/dashboard', function () {
     return view('dashboard');

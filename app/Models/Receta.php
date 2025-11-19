@@ -16,6 +16,10 @@ class Receta extends Model
         'producto_id',
         'instrucciones',
         'costo_total_calculado',
+        'descripcion',
+        'porciones',
+        'tiempo_preparacion',
+        'activo',
     ];
 
     protected $casts = [
