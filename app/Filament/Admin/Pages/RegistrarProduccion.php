@@ -96,7 +96,7 @@ class RegistrarProduccion extends Page implements HasForms, HasActions
                 
                 if ($stockDisponible < $cantidadNecesaria) {
                     // Si falta UN solo insumo, lanzamos una excepción y detenemos todo
-                    throw new \Exception("Stock insuficiente para {$insumo->nombre}. Necesario: {$cantidadNecesaria} {$insumo->unidad_de_medida}, Disponible: {$stockDisponible} {$insumo->unidad_de_medida}.");
+                    throw new \Exception("Stock insuficiente para {$insumo->nombre}. Necesario: {$cantidadNecesaria} {$insumo->unidad_de_medida->value}, Disponible: {$stockDisponible} {$insumo->unidad_de_medida->value}.");
                 }
                 
                 // Si hay, lo guardamos para el próximo paso

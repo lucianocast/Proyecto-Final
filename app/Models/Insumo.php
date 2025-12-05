@@ -24,6 +24,7 @@ class Insumo extends Model
     protected $casts = [
         'stock_minimo' => 'decimal:4',
         'activo' => 'boolean',
+        'unidad_de_medida' => \App\Enums\UnidadMedida::class,
     ];
 
     public function lotes()
@@ -50,7 +51,7 @@ class Insumo extends Model
     public function proveedores()
     {
         return $this->belongsToMany(Proveedor::class, 'insumo_proveedor', 'insumo_id', 'proveedor_id')
-            ->withPivot(['precio', 'unidad_de_compra', 'factor_de_conversion', 'tiempo_entrega_dias'])
+            ->withPivot(['precio', 'unidad_compra', 'cantidad_por_bulto', 'tiempo_entrega_dias'])
             ->withTimestamps();
     }
 

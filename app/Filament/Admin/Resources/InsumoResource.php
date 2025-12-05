@@ -2,6 +2,7 @@
 
 namespace App\Filament\Admin\Resources;
 
+use App\Enums\UnidadMedida;
 use App\Filament\Admin\Resources\InsumoResource\Pages;
 use App\Filament\Admin\Resources\InsumoResource\RelationManagers;
 use App\Models\Insumo;
@@ -39,9 +40,10 @@ class InsumoResource extends Resource
                     ->maxLength(255),
                 Textarea::make('descripcion')
                     ->columnSpanFull(),
-                TextInput::make('unidad_de_medida')
+                Select::make('unidad_de_medida')
                     ->required()
-                    ->maxLength(255)
+                    ->options(UnidadMedida::class)
+                    ->searchable()
                     ->label('Unidad de Medida'),
                 TextInput::make('precio_unitario')
                     ->readonly()

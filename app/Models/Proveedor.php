@@ -30,7 +30,7 @@ class Proveedor extends Model
     public function insumos()
     {
         return $this->belongsToMany(Insumo::class, 'insumo_proveedor', 'proveedor_id', 'insumo_id')
-            ->withPivot(['precio', 'unidad_de_compra', 'factor_de_conversion', 'tiempo_entrega_dias'])
+            ->withPivot(['precio', 'unidad_compra', 'cantidad_por_bulto', 'tiempo_entrega_dias'])
             ->withTimestamps();
     }
 

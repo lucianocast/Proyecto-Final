@@ -2,23 +2,33 @@
 
 namespace App\Filament\Admin\Resources;
 
+use App\Enums\UnidadMedida;
 use App\Filament\Admin\Resources\OrdenDeCompraResource\Pages;
 use App\Filament\Admin\Resources\OrdenDeCompraResource\RelationManagers;
+use App\Helpers\ConversionHelper;
 use App\Models\OrdenDeCompra;
+use App\Models\Insumo;
 use App\Models\Lote;
 use Filament\Forms;
 use Filament\Forms\Components\DatePicker;
+use Filament\Forms\Components\Placeholder;
+use Filament\Forms\Components\Repeater;
+use Filament\Forms\Components\Section;
 use Filament\Forms\Components\Select;
 use Filament\Forms\Components\TextInput;
 use Filament\Forms\Components\Wizard;
 use Filament\Forms\Form;
+use Filament\Forms\Get;
+use Filament\Forms\Set;
 use Filament\Notifications\Notification;
 use Filament\Resources\Resource;
 use Filament\Tables;
 use Filament\Tables\Columns\TextColumn;
 use Filament\Tables\Table;
 use Illuminate\Database\Eloquent\Builder;
+use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletingScope;
+use Illuminate\Support\Collection;
 use Illuminate\Support\Facades\DB;
 
 class OrdenDeCompraResource extends Resource
@@ -32,71 +42,280 @@ class OrdenDeCompraResource extends Resource
     {
         return $form
             ->schema([
-                Select::make('proveedor_id')
-                    ->relationship('proveedor', 'nombre_empresa')
-                    ->required()
-                    ->searchable(['nombre_empresa', 'nombre_contacto'])
-                    ->preload()
-                    ->label('Proveedor'),
-                Select::make('status')
-                    ->required()
-                    ->options([
-                        'Pendiente' => 'Pendiente',
-                        'Aprobada' => 'Aprobada',
-                        'Recibida' => 'Recibida',
-                        'Cancelada' => 'Cancelada',
+                Section::make('Información de la Orden')
+                    ->schema([
+                        Select::make('proveedor_id')
+                            ->relationship('proveedor', 'nombre_empresa')
+                            ->required()
+                            ->searchable(['nombre_empresa', 'nombre_contacto'])
+                            ->preload()
+                            ->live()
+                            ->label('Proveedor')
+                            ->afterStateUpdated(fn (Set $set) => $set('items', []))
+                            ->disabled(fn (?Model $record) => $record && in_array($record->status, ['recibida_parcial', 'recibida_total', 'cancelada'])),
+                        
+                        Select::make('status')
+                            ->required()
+                            ->options([
+                                'pendiente' => 'Pendiente',
+                                'aprobada' => 'Aprobada',
+                                'rechazada' => 'Rechazada',
+                                'recibida_parcial' => 'Recibida Parcial',
+                                'recibida_total' => 'Recibida Total',
+                                'cancelada' => 'Cancelada',
+                            ])
+                            ->default('pendiente')
+                            ->label('Estado')
+                            ->disabled(fn (?Model $record) => $record && in_array($record->status, ['recibida_parcial', 'recibida_total', 'cancelada'])),
+                        
+                        DatePicker::make('fecha_emision')
+                            ->required()
+                            ->label('Fecha')
+                            ->default(now())
+                            ->disabled(fn (?Model $record) => $record && in_array($record->status, ['recibida_parcial', 'recibida_total', 'cancelada'])),
                     ])
-                    ->default('Pendiente'),
-                DatePicker::make('fecha_emision')
-                    ->required()
-                    ->label('Fecha de Emisión')
-                    ->default(now()),
-                TextInput::make('total_calculado')
-                    ->required()
-                    ->numeric()
-                    ->readOnly()
-                    ->prefix('$')
-                    ->label('Total')
-                    ->default(0),
-            ]);
+                    ->columns(3),
+
+                Section::make('Items de la Orden')
+                    ->schema([
+                        Repeater::make('items')
+                            ->relationship('items')
+                            ->schema([
+                                Select::make('insumo_id')
+                                    ->label('Insumo')
+                                    ->options(function (Get $get) {
+                                        $proveedorId = $get('../../proveedor_id');
+                                        
+                                        if (!$proveedorId) {
+                                            return [];
+                                        }
+
+                                        return Insumo::whereHas('proveedores', function ($query) use ($proveedorId) {
+                                            $query->where('proveedor_id', $proveedorId);
+                                        })
+                                        ->activos()
+                                        ->pluck('nombre', 'id');
+                                    })
+                                    ->required()
+                                    ->searchable()
+                                    ->live()
+                                    ->disableOptionsWhenSelectedInSiblingRepeaterItems()
+                                    ->afterStateUpdated(function (Set $set, Get $get, $state) {
+                                        $proveedorId = $get('../../proveedor_id');
+                                        
+                                        if (!$state || !$proveedorId) {
+                                            $set('unidad_compra_display', null);
+                                            return;
+                                        }
+
+                                        $insumo = Insumo::find($state);
+                                        $proveedorData = $insumo->proveedores()
+                                            ->where('proveedor_id', $proveedorId)
+                                            ->first();
+
+                                        $precio = $proveedorData->pivot->precio ?? 0;
+                                        $unidadCompra = $proveedorData->pivot->unidad_compra ?? 'Unidad';
+                                        
+                                        $set('precio_unitario', $precio);
+                                        $set('unidad_compra_display', $unidadCompra);
+                                        
+                                        $cantidad = $get('cantidad') ?? 1;
+                                        $set('subtotal', $cantidad * $precio);
+                                    }),
+
+                                TextInput::make('cantidad')
+                                    ->label('Cantidad')
+                                    ->numeric()
+                                    ->required()
+                                    ->default(1)
+                                    ->minValue(0.01)
+                                    ->live(onBlur: true)
+                                    ->helperText(function (Get $get) {
+                                        $unidad = $get('unidad_compra_display');
+                                        return $unidad ? "Unidad: {$unidad}" : null;
+                                    })
+                                    ->afterStateUpdated(function (Set $set, Get $get, $state) {
+                                        $precio = $get('precio_unitario') ?? 0;
+                                        $subtotal = $state * $precio;
+                                        $set('subtotal', $subtotal);
+                                        
+                                        // Recalcular total general
+                                        self::recalcularTotal($set, $get);
+                                    }),
+
+                                TextInput::make('unidad_compra_display')
+                                    ->label('Unidad')
+                                    ->disabled()
+                                    ->dehydrated(false)
+                                    ->placeholder('Seleccione insumo'),
+
+                                TextInput::make('precio_unitario')
+                                    ->label('Precio Unit.')
+                                    ->numeric()
+                                    ->required()
+                                    ->prefix('$')
+                                    ->live(onBlur: true)
+                                    ->afterStateUpdated(function (Set $set, Get $get, $state) {
+                                        $cantidad = $get('cantidad') ?? 1;
+                                        $subtotal = $cantidad * $state;
+                                        $set('subtotal', $subtotal);
+                                        
+                                        // Recalcular total general
+                                        self::recalcularTotal($set, $get);
+                                    }),
+
+                                TextInput::make('subtotal')
+                                    ->label('Subtotal')
+                                    ->numeric()
+                                    ->prefix('$')
+                                    ->readOnly()
+                                    ->default(0)
+                                    ->dehydrated(),
+                            ])
+                            ->columns(5)
+                            ->defaultItems(0)
+                            ->addActionLabel('+ Agregar Insumo')
+                            ->reorderable(false)
+                            ->collapsible()
+                            ->live()
+                            ->afterStateUpdated(function (Set $set, Get $get) {
+                                self::recalcularTotal($set, $get);
+                            })
+                            ->disabled(fn (?Model $record) => $record && in_array($record->status, ['recibida_parcial', 'recibida_total', 'cancelada'])),
+                    ])
+                    ->description('Agregue los insumos a solicitar al proveedor seleccionado'),
+
+                Section::make('Totales')
+                    ->schema([
+                        Placeholder::make('total_calculado_display')
+                            ->label('Total General')
+                            ->content(function (Get $get) {
+                                $items = $get('items') ?? [];
+                                $total = collect($items)->sum('subtotal');
+                                return '$' . number_format($total, 2);
+                            }),
+                        
+                        TextInput::make('total_calculado')
+                            ->label('Total')
+                            ->numeric()
+                            ->readOnly()
+                            ->prefix('$')
+                            ->default(0)
+                            ->dehydrated()
+                            ->hidden(),
+                    ])
+                    ->columns(1),
+            ])
+            ->disabled(fn (?Model $record) => $record && in_array($record->status, ['recibida_parcial', 'recibida_total', 'cancelada']));
+    }
+
+    protected static function recalcularTotal(Set $set, Get $get): void
+    {
+        $items = $get('items') ?? [];
+        $total = collect($items)->sum('subtotal');
+        $set('total_calculado', $total);
     }
 
     public static function table(Table $table): Table
     {
         return $table
             ->columns([
+                TextColumn::make('id')
+                    ->label('ID')
+                    ->sortable()
+                    ->searchable(),
+                
                 TextColumn::make('proveedor.nombre_empresa')
                     ->searchable(['nombre_empresa', 'nombre_contacto'])
                     ->sortable()
-                    ->label('Proveedor'),
-                TextColumn::make('user.name')
-                    ->label('Creada por'),
-                TextColumn::make('fecha_emision')
-                    ->date()
-                    ->sortable()
-                    ->label('Fecha'),
+                    ->label('Proveedor')
+                    ->wrap(),
+                
                 TextColumn::make('status')
+                    ->label('Estado')
                     ->badge()
                     ->color(fn (string $state): string => match ($state) {
-                        'Pendiente' => 'warning',
-                        'Aprobada' => 'primary',
-                        'Recibida' => 'success',
-                        'Cancelada' => 'danger',
+                        'pendiente' => 'gray',
+                        'aprobada' => 'info',
+                        'rechazada' => 'danger',
+                        'recibida_parcial' => 'warning',
+                        'recibida_total' => 'success',
+                        'cancelada' => 'danger',
+                        default => 'gray',
+                    })
+                    ->formatStateUsing(fn (string $state): string => match ($state) {
+                        'pendiente' => 'Pendiente',
+                        'aprobada' => 'Aprobada',
+                        'rechazada' => 'Rechazada',
+                        'recibida_parcial' => 'Recibida Parcial',
+                        'recibida_total' => 'Recibida Total',
+                        'cancelada' => 'Cancelada',
+                        default => ucfirst($state),
                     }),
-                TextColumn::make('total_calculado')
-                    ->money('ARS')
+                
+                TextColumn::make('fecha_emision')
+                    ->label('Fecha')
+                    ->date('d/m/Y')
                     ->sortable(),
+                
+                TextColumn::make('items_count')
+                    ->label('Items')
+                    ->counts('items')
+                    ->alignCenter()
+                    ->badge()
+                    ->color('primary'),
+                
+                TextColumn::make('total_calculado')
+                    ->label('Total')
+                    ->money('ARS')
+                    ->sortable()
+                    ->summarize([
+                        Tables\Columns\Summarizers\Sum::make()
+                            ->money('ARS')
+                            ->label('Total General'),
+                    ]),
+                
+                TextColumn::make('user.name')
+                    ->label('Creada por')
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
+            ->defaultSort('id', 'desc')
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('status')
+                    ->label('Estado')
+                    ->options([
+                        'pendiente' => 'Pendiente',
+                        'aprobada' => 'Aprobada',
+                        'rechazada' => 'Rechazada',
+                        'recibida_parcial' => 'Recibida Parcial',
+                        'recibida_total' => 'Recibida Total',
+                        'cancelada' => 'Cancelada',
+                    ])
+                    ->multiple(),
+                
+                Tables\Filters\Filter::make('fecha_emision')
+                    ->form([
+                        DatePicker::make('desde')->label('Desde'),
+                        DatePicker::make('hasta')->label('Hasta'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['desde'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('fecha_emision', '>=', $date),
+                            )
+                            ->when(
+                                $data['hasta'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('fecha_emision', '<=', $date),
+                            );
+                    }),
             ])
             ->actions([
                 Tables\Actions\Action::make('recibirStock')
                     ->label('Recibir Stock')
                     ->icon('heroicon-o-archive-box-arrow-down')
                     ->color('success')
-                    // La acción solo es visible si el estado es 'Aprobada'
-                    ->visible(fn ($record) => $record->status === 'Aprobada')
+                    ->visible(fn ($record) => $record->status === 'aprobada')
                     ->modalHeading('Recibir Items de la Orden')
                     ->modalWidth('2xl')
                     
@@ -107,7 +326,7 @@ class OrdenDeCompraResource extends Resource
                         // Generamos un paso por CADA item en la orden
                         foreach ($record->items as $item) {
                             $steps[] = Wizard\Step::make($item->insumo->nombre)
-                                ->description("Recibiendo {$item->cantidad} {$item->insumo->unidad_de_medida} de {$item->insumo->nombre}")
+                                ->description("Recibiendo {$item->cantidad} {$item->insumo->unidad_de_medida->value} de {$item->insumo->nombre}")
                                 ->schema([
                                     // Pedimos los datos del lote
                                     DatePicker::make($item->id . '.fecha_vencimiento')
@@ -126,21 +345,44 @@ class OrdenDeCompraResource extends Resource
                         try {
                             DB::transaction(function () use ($data, $record) {
                                 
-                                // 1. Creamos los lotes
+                                // 1. Creamos los lotes con conversión de unidades
                                 foreach ($record->items as $item) {
-                                    $loteData = $data[$item->id] ?? []; // Obtenemos los datos de este item
+                                    $loteData = $data[$item->id] ?? [];
+                                    
+                                    // Buscar datos de compra en tabla pivote
+                                    $proveedorData = $item->insumo->proveedores()
+                                        ->where('proveedor_id', $record->proveedor_id)
+                                        ->first();
+                                    
+                                    $unidadCompra = UnidadMedida::from($proveedorData->pivot->unidad_compra);
+                                    $unidadBase = $item->insumo->unidad_de_medida;
+                                    
+                                    // Validar compatibilidad de unidades
+                                    if (!ConversionHelper::sonCompatibles($unidadCompra, $unidadBase)) {
+                                        throw new \Exception(
+                                            "Error de conversión para {$item->insumo->nombre}: " .
+                                            "No se puede convertir {$unidadCompra->getLabel()} a {$unidadBase->getLabel()}"
+                                        );
+                                    }
+                                    
+                                    // Calcular cantidad real en unidad base usando el helper
+                                    $cantidadReal = ConversionHelper::convertirABase(
+                                        cantidad: $item->cantidad * ($proveedorData->pivot->cantidad_por_bulto ?? 1),
+                                        unidadCompra: $unidadCompra,
+                                        unidadBase: $unidadBase
+                                    );
                                     
                                     Lote::create([
                                         'insumo_id' => $item->insumo_id,
-                                        'cantidad_inicial' => $item->cantidad,
-                                        'cantidad_actual' => $item->cantidad,
+                                        'cantidad_inicial' => $cantidadReal,
+                                        'cantidad_actual' => $cantidadReal,
                                         'fecha_vencimiento' => $loteData['fecha_vencimiento'] ?? null,
                                         'codigo_lote' => $loteData['codigo_lote'] ?? null,
                                     ]);
                                 }
                                 
                                 // 2. Actualizamos el estado de la Orden de Compra
-                                $record->update(['status' => 'Recibida']);
+                                $record->update(['status' => 'recibida_total']);
 
                                 Notification::make()
                                     ->title('¡Stock Recibido!')
@@ -169,7 +411,7 @@ class OrdenDeCompraResource extends Resource
     public static function getRelations(): array
     {
         return [
-            RelationManagers\ItemsRelationManager::class,
+            // Ya no necesitamos ItemsRelationManager porque usamos Repeater en el formulario
         ];
     }
 
