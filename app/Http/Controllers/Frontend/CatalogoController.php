@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Frontend;
 
 use App\Http\Controllers\Controller;
 use App\Models\Producto;
+use App\Models\CategoriaProducto;
+use Illuminate\Http\Request;
 use Illuminate\View\View;
 
 class CatalogoController extends Controller
@@ -11,14 +13,23 @@ class CatalogoController extends Controller
     /**
      * Muestra el catálogo de productos visibles.
      */
-    public function index(): View
+    public function index(Request $request): View
     {
-        // Obtener productos visibles en catálogo con eager loading y paginación
-        $productos = Producto::visibleEnCatalogo()
-            ->with('variantes') // Eager loading para evitar N+1
-            ->paginate(12);
+        // Obtener todas las categorías para los filtros
+        $categorias = CategoriaProducto::all();
 
-        return view('frontend.catalogo.index', compact('productos'));
+        // Query base de productos visibles
+        $query = Producto::visibleEnCatalogo()->with('variantes');
+
+        // Filtrar por categoría si se especifica
+        if ($request->has('categoria') && $request->categoria) {
+            $query->where('categoria_producto_id', $request->categoria);
+        }
+
+        // Obtener productos con paginación
+        $productos = $query->paginate(12);
+
+        return view('frontend.catalogo.index', compact('productos', 'categorias'));
     }
 
     /**

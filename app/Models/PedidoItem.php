@@ -32,4 +32,20 @@ class PedidoItem extends Model
     {
         return $this->belongsTo(ProductoVariante::class, 'producto_variante_id');
     }
+
+    /**
+     * Relación directa con Producto a través de ProductoVariante
+     * Útil para simplificar queries y eager loading
+     */
+    public function producto()
+    {
+        return $this->hasOneThrough(
+            Producto::class,
+            ProductoVariante::class,
+            'id', // Foreign key en producto_variantes
+            'id', // Foreign key en productos
+            'producto_variante_id', // Local key en pedido_items
+            'producto_id' // Local key en producto_variantes
+        );
+    }
 }

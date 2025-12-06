@@ -114,13 +114,71 @@ class InsumosRelationManager extends RelationManager
                     ->using(function ($record, array $data): void {
                         $record->pivot->cantidad = $data['cantidad'];
                         $record->pivot->save();
+                    })
+                    ->after(function () {
+                        // Recalcular costo después de modificar cantidad
+                        $this->getOwnerRecord()->actualizarCosto();
+                        
+                        \Filament\Notifications\Notification::make()
+                            ->title('Cantidad actualizada')
+                            ->body('El costo primo ha sido recalculado automáticamente.')
+                            ->success()
+                            ->send();
                     }),
-                Tables\Actions\DetachAction::make(),
+                Tables\Actions\DetachAction::make()
+                    ->after(function () {
+                        // Recalcular costo después de eliminar insumo
+                        $this->getOwnerRecord()->actualizarCosto();
+                    }),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
-                    Tables\Actions\DetachBulkAction::make(),
+                    Tables\Actions\DetachBulkAction::make()
+                        ->after(function () {
+                            // Recalcular costo después de eliminar insumos
+                            $this->getOwnerRecord()->actualizarCosto();
+                        }),
                 ]),
+            ])
+            ->headerActions([
+                Tables\Actions\AttachAction::make()
+                    ->preloadRecordSelect()
+                    ->recordSelectOptionsQuery(fn ($query) => $query->orderBy('nombre'))
+                    ->form(fn (AttachAction $action): array => [
+                        $action->getRecordSelect()
+                            ->live()
+                            ->afterStateUpdated(function (Set $set, $state) {
+                                if ($state) {
+                                    $insumo = Insumo::find($state);
+                                    $set('unidad_display', $insumo?->unidad_de_medida?->value ?? '');
+                                }
+                            }),
+                        
+                        TextInput::make('cantidad')
+                            ->required()
+                            ->numeric()
+                            ->minValue(0.01)
+                            ->label('Cantidad')
+                            ->suffix(function (Get $get) {
+                                $recordId = $get('recordId');
+                                if ($recordId) {
+                                    $insumo = Insumo::find($recordId);
+                                    return $insumo?->unidad_de_medida?->value ?? '';
+                                }
+                                return '';
+                            })
+                            ->helperText('Ingrese la cantidad en la unidad base del insumo'),
+                    ])
+                    ->after(function () {
+                        // Recalcular costo después de agregar insumo
+                        $this->getOwnerRecord()->actualizarCosto();
+                        
+                        \Filament\Notifications\Notification::make()
+                            ->title('Insumo agregado')
+                            ->body('El costo primo ha sido recalculado automáticamente.')
+                            ->success()
+                            ->send();
+                    }),
             ]);
     }
 }

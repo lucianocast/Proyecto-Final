@@ -97,6 +97,75 @@ class CheckoutView extends Component
         }
     }
 
+    /**
+     * Manejar token de pago de Google Pay (UC-09)
+     * 
+     * Este método recibe el token desde el frontend y procesa el pago
+     * 
+     * @param string $paymentToken Token de pago de Google Pay
+     * @param array $additionalData Datos adicionales (email, billing_address, etc.)
+     */
+    public function handlePaymentToken(string $paymentToken, array $additionalData = [])
+    {
+        try {
+            // Validar que exista un pedido activo (usar el último pedido del usuario)
+            $user = Auth::user();
+            $pedido = Pedido::where('cliente_id', $user->id)
+                ->where('status', 'pendiente')
+                ->where('saldo_pendiente', '>', 0)
+                ->latest()
+                ->first();
+
+            if (!$pedido) {
+                $this->dispatch('error', message: 'No se encontró un pedido pendiente de pago.');
+                return;
+            }
+
+            // Preparar datos del token
+            $tokenData = array_merge([
+                'token' => $paymentToken,
+            ], $additionalData);
+
+            // Inyectar y usar PaymentService
+            $paymentService = app(\App\Services\PaymentService::class);
+
+            // Procesar el pago (monto = saldo pendiente)
+            $pago = $paymentService->processPayment(
+                pedido: $pedido,
+                monto: $pedido->saldo_pendiente,
+                tokenData: $tokenData,
+                methodName: 'google_pay'
+            );
+
+            // Limpiar carrito después del pago exitoso
+            \Cart::clear();
+            $this->dispatch('cartUpdated');
+
+            // Emitir evento de éxito con datos del pago
+            $this->dispatch('paymentSuccess', [
+                'message' => '¡Pago procesado exitosamente!',
+                'pago_id' => $pago->id,
+                'transaction_id' => $pago->referencia_externa,
+                'pedido_id' => $pedido->id,
+            ]);
+
+            // Redirigir a página de confirmación
+            return redirect()->route('pedido.confirmacion', ['pedido' => $pedido->id]);
+
+        } catch (\Exception $e) {
+            // Registrar error en logs
+            \Log::error('Error al procesar pago de Google Pay', [
+                'error' => $e->getMessage(),
+                'user_id' => Auth::id(),
+            ]);
+
+            // Emitir evento de error
+            $this->dispatch('paymentError', [
+                'message' => $e->getMessage(),
+            ]);
+        }
+    }
+
     #[Layout('layouts.app')]
     public function render()
     {

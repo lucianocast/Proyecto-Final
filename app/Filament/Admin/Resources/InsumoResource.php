@@ -75,24 +75,74 @@ class InsumoResource extends Resource
                 TextColumn::make('stock_actual')
                     ->numeric()
                     ->label('Stock Actual')
-                    ->state(fn ($record) => $record->lotes()->sum('cantidad_actual')),
+                    ->state(fn ($record) => $record->stock_total)
+                    ->color(fn ($record) => match (true) {
+                        $record->stock_total <= $record->stock_minimo => 'danger',
+                        $record->stock_total <= ($record->stock_minimo * 1.5) => 'warning',
+                        default => 'success',
+                    })
+                    ->weight('bold'),
                 TextColumn::make('stock_minimo')
                     ->numeric()
                     ->label('Stock Mínimo'),
-                TextColumn::make('precio')
-                    ->money('ARS')
-                    ->label('Precio'),
+                TextColumn::make('estado')
+                    ->label('Estado')
+                    ->badge()
+                    ->state(fn ($record) => match (true) {
+                        $record->stock_total <= $record->stock_minimo => 'Crítico',
+                        $record->stock_total <= ($record->stock_minimo * 1.5) => 'Bajo',
+                        default => 'Normal',
+                    })
+                    ->color(fn ($record) => match (true) {
+                        $record->stock_total <= $record->stock_minimo => 'danger',
+                        $record->stock_total <= ($record->stock_minimo * 1.5) => 'warning',
+                        default => 'success',
+                    }),
+                TextColumn::make('ubicacion')
+                    ->searchable()
+                    ->toggleable(isToggledHiddenByDefault: true),
             ])
             ->filters([
-                //
+                Tables\Filters\SelectFilter::make('categoria_insumo_id')
+                    ->relationship('categoria', 'nombre')
+                    ->label('Categoría')
+                    ->searchable()
+                    ->preload(),
+                Tables\Filters\Filter::make('ubicacion')
+                    ->form([
+                        Forms\Components\TextInput::make('ubicacion')
+                            ->label('Ubicación'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['ubicacion'],
+                                fn (Builder $query, $ubicacion): Builder => $query->where('ubicacion', 'like', "%{$ubicacion}%"),
+                            );
+                    }),
+                Tables\Filters\Filter::make('stock_critico')
+                    ->label('Stock Crítico')
+                    ->query(fn (Builder $query): Builder => $query->whereRaw('(SELECT SUM(cantidad_actual) FROM lotes WHERE lotes.insumo_id = insumos.id) <= stock_minimo'))
+                    ->toggle(),
+                Tables\Filters\Filter::make('stock_bajo')
+                    ->label('Stock Bajo')
+                    ->query(fn (Builder $query): Builder => $query->whereRaw('(SELECT SUM(cantidad_actual) FROM lotes WHERE lotes.insumo_id = insumos.id) <= stock_minimo * 1.5'))
+                    ->toggle(),
             ])
             ->actions([
+                Tables\Actions\ViewAction::make(),
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([
                 Tables\Actions\BulkActionGroup::make([
                     Tables\Actions\DeleteBulkAction::make(),
+                    Tables\Actions\ExportBulkAction::make()
+                        ->exporter(\App\Filament\Exports\InsumoExporter::class),
                 ]),
+            ])
+            ->headerActions([
+                Tables\Actions\ExportAction::make()
+                    ->exporter(\App\Filament\Exports\InsumoExporter::class),
             ]);
     }
 

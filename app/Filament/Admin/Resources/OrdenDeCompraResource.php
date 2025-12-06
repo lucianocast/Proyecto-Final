@@ -293,6 +293,12 @@ class OrdenDeCompraResource extends Resource
                     ])
                     ->multiple(),
                 
+                Tables\Filters\SelectFilter::make('proveedor')
+                    ->relationship('proveedor', 'nombre_empresa')
+                    ->searchable()
+                    ->preload()
+                    ->label('Proveedor'),
+                
                 Tables\Filters\Filter::make('fecha_emision')
                     ->form([
                         DatePicker::make('desde')->label('Desde'),
@@ -308,9 +314,94 @@ class OrdenDeCompraResource extends Resource
                                 $data['hasta'],
                                 fn (Builder $query, $date): Builder => $query->whereDate('fecha_emision', '<=', $date),
                             );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['desde'] ?? null) {
+                            $indicators[] = 'Desde: ' . \Carbon\Carbon::parse($data['desde'])->format('d/m/Y');
+                        }
+                        if ($data['hasta'] ?? null) {
+                            $indicators[] = 'Hasta: ' . \Carbon\Carbon::parse($data['hasta'])->format('d/m/Y');
+                        }
+                        return $indicators;
                     }),
+
+                Tables\Filters\Filter::make('fecha_entrega_esperada')
+                    ->label('Fecha Entrega Esperada')
+                    ->form([
+                        DatePicker::make('desde')->label('Desde'),
+                        DatePicker::make('hasta')->label('Hasta'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['desde'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('fecha_entrega_esperada', '>=', $date),
+                            )
+                            ->when(
+                                $data['hasta'],
+                                fn (Builder $query, $date): Builder => $query->whereDate('fecha_entrega_esperada', '<=', $date),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['desde'] ?? null) {
+                            $indicators[] = 'Entrega desde: ' . \Carbon\Carbon::parse($data['desde'])->format('d/m/Y');
+                        }
+                        if ($data['hasta'] ?? null) {
+                            $indicators[] = 'Entrega hasta: ' . \Carbon\Carbon::parse($data['hasta'])->format('d/m/Y');
+                        }
+                        return $indicators;
+                    }),
+
+                Tables\Filters\Filter::make('monto_total')
+                    ->label('Monto Total')
+                    ->form([
+                        TextInput::make('minimo')
+                            ->label('Monto Mínimo')
+                            ->numeric()
+                            ->prefix('$'),
+                        TextInput::make('maximo')
+                            ->label('Monto Máximo')
+                            ->numeric()
+                            ->prefix('$'),
+                    ])
+                    ->query(function (Builder $query, array $data): Builder {
+                        return $query
+                            ->when(
+                                $data['minimo'],
+                                fn (Builder $query, $monto): Builder => $query->where('total_calculado', '>=', $monto),
+                            )
+                            ->when(
+                                $data['maximo'],
+                                fn (Builder $query, $monto): Builder => $query->where('total_calculado', '<=', $monto),
+                            );
+                    })
+                    ->indicateUsing(function (array $data): array {
+                        $indicators = [];
+                        if ($data['minimo'] ?? null) {
+                            $indicators[] = 'Monto Min: $' . number_format($data['minimo'], 2);
+                        }
+                        if ($data['maximo'] ?? null) {
+                            $indicators[] = 'Monto Max: $' . number_format($data['maximo'], 2);
+                        }
+                        return $indicators;
+                    }),
+
+                Tables\Filters\SelectFilter::make('user')
+                    ->relationship('user', 'name')
+                    ->searchable()
+                    ->preload()
+                    ->label('Creada por'),
             ])
             ->actions([
+                Tables\Actions\Action::make('pdf')
+                    ->label('PDF')
+                    ->icon('heroicon-o-document-arrow-down')
+                    ->color('info')
+                    ->url(fn (OrdenDeCompra $record): string => route('orden-compra.pdf', $record))
+                    ->openUrlInNewTab(),
+
                 Tables\Actions\Action::make('recibirStock')
                     ->label('Recibir Stock')
                     ->icon('heroicon-o-archive-box-arrow-down')
@@ -365,9 +456,11 @@ class OrdenDeCompraResource extends Resource
                                         );
                                     }
                                     
-                                    // Calcular cantidad real en unidad base usando el helper
+                                    // La cantidad en la orden ya está en la unidad de compra correcta
+                                    // Solo convertimos de unidad de compra a unidad base, SIN multiplicar por cantidad_por_bulto
+                                    // porque $item->cantidad ya representa la cantidad total comprada
                                     $cantidadReal = ConversionHelper::convertirABase(
-                                        cantidad: $item->cantidad * ($proveedorData->pivot->cantidad_por_bulto ?? 1),
+                                        cantidad: $item->cantidad,
                                         unidadCompra: $unidadCompra,
                                         unidadBase: $unidadBase
                                     );
@@ -399,6 +492,84 @@ class OrdenDeCompraResource extends Resource
                                 ->send();
                         }
                     }),
+
+                // UC-16: Acción Cancelar Orden de Compra con justificación
+                Tables\Actions\Action::make('cancelar')
+                    ->label('Cancelar Orden')
+                    ->icon('heroicon-o-x-circle')
+                    ->color('danger')
+                    ->requiresConfirmation()
+                    ->modalHeading('Cancelar Orden de Compra')
+                    ->modalDescription('⚠️ Esta acción cancelará la orden de compra de forma permanente. Debe proporcionar una justificación obligatoria.')
+                    ->modalIcon('heroicon-o-exclamation-triangle')
+                    ->form([
+                        Forms\Components\Textarea::make('justification')
+                            ->label('Justificación Obligatoria')
+                            ->required()
+                            ->placeholder('Ej: Proveedor sin stock, cambio de planificación, precio demasiado alto, etc.')
+                            ->rows(4)
+                            ->helperText('La justificación será registrada en el log de auditoría.'),
+                    ])
+                    ->action(function (OrdenDeCompra $record, array $data): void {
+                        // Validar que la OC puede ser cancelada
+                        if (in_array($record->status, ['recibida_total', 'cancelada'])) {
+                            Notification::make()
+                                ->title('Error')
+                                ->body('No se puede cancelar una orden que ya fue recibida o está cancelada.')
+                                ->danger()
+                                ->send();
+                            return;
+                        }
+
+                        // Si está recibida parcialmente, advertir
+                        if ($record->status === 'recibida_parcial') {
+                            Notification::make()
+                                ->title('Advertencia')
+                                ->body('Esta orden tiene recepciones parciales. La cancelación no revertirá el stock ya recibido.')
+                                ->warning()
+                                ->send();
+                        }
+
+                        try {
+                            DB::transaction(function () use ($record, $data) {
+                                $oldStatus = $record->status;
+                                
+                                // Cambiar estado a cancelada
+                                $record->status = 'cancelada';
+                                $record->save();
+
+                                // Registrar en auditoría (UC-16 crítico)
+                                $record->auditAction(
+                                    action: 'cancelled',
+                                    justification: $data['justification'],
+                                    data: [
+                                        'old_status' => $oldStatus,
+                                        'new_status' => 'cancelada',
+                                        'proveedor_id' => $record->proveedor_id,
+                                        'total_calculado' => $record->total_calculado,
+                                        'fecha_cancelacion' => now()->toDateTimeString(),
+                                    ]
+                                );
+                            });
+
+                            Notification::make()
+                                ->title('✅ Orden de Compra Cancelada')
+                                ->body('La orden ha sido cancelada exitosamente y registrada en auditoría.')
+                                ->success()
+                                ->send();
+
+                        } catch (\Exception $e) {
+                            Notification::make()
+                                ->title('Error al cancelar orden')
+                                ->body('Ocurrió un error: ' . $e->getMessage())
+                                ->danger()
+                                ->send();
+                        }
+                    })
+                    ->visible(fn (OrdenDeCompra $record): bool => 
+                        !in_array($record->status, ['recibida_total', 'cancelada'])
+                    ),
+
                 Tables\Actions\EditAction::make(),
             ])
             ->bulkActions([

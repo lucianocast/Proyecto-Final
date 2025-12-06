@@ -21,6 +21,26 @@ use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\Encargado\CompraController;
 use App\Http\Controllers\Proveedor\PanelController as ProveedorPanelController;
+use App\Http\Controllers\MercadoPagoController;
+
+// Rutas de Mercado Pago
+Route::get('/mercadopago/success', [MercadoPagoController::class, 'success'])->name('mercadopago.success');
+Route::get('/mercadopago/failure', [MercadoPagoController::class, 'failure'])->name('mercadopago.failure');
+Route::get('/mercadopago/pending', [MercadoPagoController::class, 'pending'])->name('mercadopago.pending');
+Route::post('/mercadopago/webhook', [MercadoPagoController::class, 'webhook'])->name('mercadopago.webhook');
+
+// Rutas para generar PDFs (protegidas por autenticación)
+Route::middleware('auth')->group(function () {
+    Route::get('/orden-compra/{ordenDeCompra}/pdf', function (\App\Models\OrdenDeCompra $ordenDeCompra) {
+        $pdfService = app(\App\Services\PdfReportService::class);
+        return $pdfService->generarPdfOrdenCompra($ordenDeCompra);
+    })->name('orden-compra.pdf');
+    
+    Route::get('/pedido/{pedido}/pdf', function (\App\Models\Pedido $pedido) {
+        $pdfService = app(\App\Services\PdfReportService::class);
+        return $pdfService->generarPdfPedido($pedido);
+    })->name('pedido.pdf');
+});
 
 // Ruta principal: Catálogo de productos (Portal del Cliente)
 Route::get('/', [CatalogoController::class, 'index'])->name('catalogo.index');
@@ -36,7 +56,7 @@ Route::get('/auth/google/callback', [GoogleAuthController::class, 'handleProvide
 
 Route::get('/dashboard', function () {
     return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth'])->name('dashboard');
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');

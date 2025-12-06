@@ -1,11 +1,90 @@
-<p align="center"><a href="https://laravel.com" target="_blank"><img src="https://raw.githubusercontent.com/laravel/art/master/logo-lockup/5%20SVG/2%20CMYK/1%20Full%20Color/laravel-logolockup-cmyk-red.svg" width="400" alt="Laravel Logo"></a></p>
+# 🍰 Sistema de Gestión para Pastelería
+
+Sistema integral de gestión para pastelería desarrollado con **Laravel 12** y **Filament v3**. Incluye gestión de inventarios, producción, pedidos, clientes y auditoría completa.
 
 <p align="center">
-<a href="https://github.com/laravel/framework/actions"><img src="https://github.com/laravel/framework/workflows/tests/badge.svg" alt="Build Status"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/dt/laravel/framework" alt="Total Downloads"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/v/laravel/framework" alt="Latest Stable Version"></a>
-<a href="https://packagist.org/packages/laravel/framework"><img src="https://img.shields.io/packagist/l/laravel/framework" alt="License"></a>
+<img src="https://img.shields.io/badge/Laravel-12.38.1-red" alt="Laravel 12.38.1">
+<img src="https://img.shields.io/badge/PHP-8.2.12-blue" alt="PHP 8.2.12">
+<img src="https://img.shields.io/badge/Filament-v3-orange" alt="Filament v3">
+<img src="https://img.shields.io/badge/PostgreSQL-16-blue" alt="PostgreSQL">
+<img src="https://img.shields.io/badge/Estado-En%20Desarrollo-yellow" alt="En Desarrollo">
 </p>
+
+---
+
+## 📋 Casos de Uso Implementados
+
+### 🎂 Producción y Recetas (UC-25 a UC-33)
+| UC | Nombre | Estado |
+|----|--------|--------|
+| UC-25 | Registrar Receta | ✅ Completo |
+| UC-26 | Modificar Receta | ✅ Completo |
+| UC-27 | Anular Receta | ✅ Completo |
+| UC-28 | Buscar Receta | ✅ Completo |
+| UC-29 | Registrar Orden de Producción | ✅ Completo |
+| UC-30 | Modificar Orden de Producción | ✅ Completo |
+| UC-31 | Anular Orden de Producción | ✅ Completo |
+| UC-32 | Consultar Calendario de Producción | ✅ Completo |
+| UC-33 | Finalizar Orden de Producción | ⏳ Pendiente |
+
+**Documentación**: [UC_25_33_IMPLEMENTACION.md](docs/UC_25_33_IMPLEMENTACION.md)
+
+### 📦 Gestión de Stock (UC-34 a UC-37)
+| UC | Nombre | Estado |
+|----|--------|--------|
+| UC-34 | Buscar Insumo | ✅ Completo |
+| UC-35 | Registrar Movimiento de Stock | ✅ Completo |
+| UC-36 | Consultar Reporte Stock Crítico | ✅ Completo |
+| UC-37 | Consultar Historial de Movimientos | ✅ Completo |
+
+**Características**:
+- Sistema de conversión de unidades automático
+- Alertas de stock crítico configurables
+- Exportación de reportes (Excel/PDF)
+- Auditoría completa de movimientos
+
+**Documentación**: Ver commits recientes
+
+### 👥 Gestión de Clientes (UC-38 a UC-42)
+| UC | Nombre | Estado |
+|----|--------|--------|
+| UC-38 | Buscar y Listar Clientes | ✅ Completo |
+| UC-39 | Registrar Cliente | ✅ Completo |
+| UC-40 | Modificar Cliente con Auditoría | ✅ Completo |
+| UC-41 | Anular/Activar Cliente | ✅ Completo |
+| UC-42 | Consultar Historial de Pedidos | ✅ Completo |
+
+**Características**:
+- Búsqueda multi-campo (nombre, email, teléfono)
+- Auditoría obligatoria con justificación
+- Validaciones de estado (no anular con pedidos pendientes)
+- Estadísticas de fidelización (total gastado, producto favorito)
+- Historial completo de pedidos con filtros avanzados
+
+**Documentación**: [UC_38_42_IMPLEMENTACION.md](docs/UC_38_42_IMPLEMENTACION.md)
+
+### 🏭 Gestión de Proveedores (UC-44 a UC-49)
+| UC | Nombre | Estado |
+|----|--------|--------|
+| UC-44 | Buscar Proveedor | ✅ Completo |
+| UC-45 | Registrar Proveedor | ✅ Completo |
+| UC-46 | Modificar Proveedor con Auditoría | ✅ Completo |
+| UC-47 | Anular/Activar Proveedor | ✅ Completo |
+| UC-48 | Consultar Historial de Compras | ✅ Completo |
+| UC-49 | Emitir Reporte de Desempeño | ⏳ Básico (70%) |
+
+**Características**:
+- Búsqueda multi-campo (razón social, CUIT, contacto, email)
+- Auditoría obligatoria con justificación
+- Validaciones de estado (no anular con OC pendientes)
+- Gestión de condiciones comerciales
+- Historial completo de órdenes de compra con filtros avanzados
+- Estadísticas de compras (total gastado, OC pendientes, última compra)
+- Relación many-to-many con insumos (precios, unidades, tiempos de entrega)
+
+**Documentación**: [UC_44_49_IMPLEMENTACION.md](docs/UC_44_49_IMPLEMENTACION.md)
+
+---
 
 ## About Laravel
 

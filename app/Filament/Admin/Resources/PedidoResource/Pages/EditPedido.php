@@ -23,4 +23,18 @@ class EditPedido extends EditRecord
     {
         $this->fillForm();
     }
+    
+    protected function mutateFormDataBeforeSave(array $data): array
+    {
+        // Calcular el subtotal para cada item antes de guardar
+        if (isset($data['items']) && is_array($data['items'])) {
+            foreach ($data['items'] as $key => $item) {
+                $cantidad = (float) ($item['cantidad'] ?? 0);
+                $precioUnitario = (float) ($item['precio_unitario'] ?? 0);
+                $data['items'][$key]['subtotal'] = $cantidad * $precioUnitario;
+            }
+        }
+        
+        return $data;
+    }
 }
